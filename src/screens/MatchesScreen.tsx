@@ -59,7 +59,12 @@ function isMatchList(value: unknown): value is Match[] {
     && item.away && typeof item.away.name === 'string');
 }
 
-export function MatchesScreen() {
+type MatchesScreenProps = {
+  darkMode: boolean;
+  onToggleTheme: () => void;
+};
+
+export function MatchesScreen({ darkMode, onToggleTheme }: MatchesScreenProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -68,6 +73,7 @@ export function MatchesScreen() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
   const { isFavorite, toggle } = useFavorites();
+  const styles = useMemo(() => createStyles(darkMode), [darkMode]);
 
   const loadMatches = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -130,7 +136,17 @@ export function MatchesScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Матчи тура</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Матчи тура</Text>
+        <Pressable
+          onPress={onToggleTheme}
+          style={styles.themeButton}
+          accessibilityRole="button"
+          accessibilityLabel={darkMode ? 'Включить светлую тему' : 'Включить тёмную тему'}
+        >
+          <Text style={styles.themeButtonText}>{darkMode ? '☀ Светлая' : '☾ Тёмная'}</Text>
+        </Pressable>
+      </View>
       <View style={styles.toolbar}>
         <View style={styles.filters}>
           {FILTERS.map(({ key, label }) => (
@@ -143,7 +159,7 @@ export function MatchesScreen() {
           <Text style={styles.refreshText}>{refreshing ? 'Обновляем…' : 'Обновить'}</Text>
         </Pressable>
       </View>
-      {updatedAt && <UpdatedAgo since={updatedAt} />}
+      {updatedAt && <UpdatedAgo since={updatedAt} color={darkMode ? '#aab6c8' : '#6b7280'} />}
       {usingSampleData && <Text style={styles.demoNote}>Показаны данные из примера: адрес сервера пока шаблонный.</Text>}
 
       {loading ? (
@@ -163,40 +179,49 @@ export function MatchesScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderMatch}
           contentContainerStyle={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadMatches(true)} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void loadMatches(true)} tintColor={darkMode ? '#93b4ff' : '#1d4ed8'} colors={[darkMode ? '#93b4ff' : '#1d4ed8']} />}
         />
       )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, paddingTop: 8, backgroundColor: '#f6f7fb' },
-  title: { fontSize: 27, fontWeight: '800', color: '#172033', marginBottom: 16 },
-  toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
-  filters: { flexDirection: 'row', gap: 4, flexShrink: 1 },
-  filter: { paddingVertical: 8, paddingHorizontal: 9, borderRadius: 18, backgroundColor: '#e9edf4' },
-  selectedFilter: { backgroundColor: '#1d4ed8' },
-  filterText: { color: '#475569', fontSize: 12, fontWeight: '600' },
-  selectedFilterText: { color: '#fff' },
-  refreshButton: { paddingVertical: 8, paddingHorizontal: 10 },
-  refreshText: { color: '#1d4ed8', fontSize: 13, fontWeight: '700' },
-  list: { paddingTop: 10, paddingBottom: 24, gap: 10 },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 15, borderWidth: 1, borderColor: '#e7eaf0' },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  status: { color: '#64748b', fontSize: 12, fontWeight: '700' },
-  liveStatus: { color: '#dc2626' },
-  teamsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  team: { flex: 1, fontSize: 15, fontWeight: '700', color: '#182235' },
-  awayTeam: { textAlign: 'right' },
-  score: { minWidth: 54, textAlign: 'center', fontSize: 17, fontWeight: '800', color: '#182235' },
-  start: { marginTop: 10, color: '#64748b', fontSize: 13 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
-  message: { color: '#64748b', textAlign: 'center' },
-  demoNote: { color: '#64748b', fontSize: 12, marginTop: 4 },
-  error: { color: '#b91c1c', textAlign: 'center', fontSize: 15 },
-  emptyTitle: { color: '#172033', fontSize: 18, fontWeight: '700' },
-  retryButton: { backgroundColor: '#1d4ed8', borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, marginTop: 4 },
-  retryText: { color: '#fff', fontWeight: '700' },
-});
+function createStyles(darkMode: boolean) {
+  const colors = darkMode
+    ? { background: '#111827', surface: '#1f2937', border: '#374151', text: '#f3f4f6', muted: '#aab6c8', filter: '#374151', primary: '#93b4ff', selected: '#3159a8' }
+    : { background: '#f6f7fb', surface: '#fff', border: '#e7eaf0', text: '#172033', muted: '#64748b', filter: '#e9edf4', primary: '#1d4ed8', selected: '#1d4ed8' };
+
+  return StyleSheet.create({
+    container: { flex: 1, paddingHorizontal: 16, paddingTop: 8, backgroundColor: colors.background },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16 },
+    title: { flex: 1, fontSize: 27, fontWeight: '800', color: colors.text },
+    themeButton: { paddingVertical: 8, paddingHorizontal: 11, borderRadius: 18, backgroundColor: colors.filter },
+    themeButtonText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+    toolbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 },
+    filters: { flexDirection: 'row', gap: 4, flexShrink: 1 },
+    filter: { paddingVertical: 8, paddingHorizontal: 9, borderRadius: 18, backgroundColor: colors.filter },
+    selectedFilter: { backgroundColor: colors.selected },
+    filterText: { color: colors.muted, fontSize: 12, fontWeight: '600' },
+    selectedFilterText: { color: '#fff' },
+    refreshButton: { paddingVertical: 8, paddingHorizontal: 10 },
+    refreshText: { color: colors.primary, fontSize: 13, fontWeight: '700' },
+    list: { paddingTop: 10, paddingBottom: 24, gap: 10 },
+    card: { backgroundColor: colors.surface, borderRadius: 14, padding: 15, borderWidth: 1, borderColor: colors.border },
+    cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    status: { color: colors.muted, fontSize: 12, fontWeight: '700' },
+    liveStatus: { color: darkMode ? '#ff8585' : '#dc2626' },
+    teamsRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    team: { flex: 1, fontSize: 15, fontWeight: '700', color: colors.text },
+    awayTeam: { textAlign: 'right' },
+    score: { minWidth: 54, textAlign: 'center', fontSize: 17, fontWeight: '800', color: colors.text },
+    start: { marginTop: 10, color: colors.muted, fontSize: 13 },
+    center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 10 },
+    message: { color: colors.muted, textAlign: 'center' },
+    demoNote: { color: colors.muted, fontSize: 12, marginTop: 4 },
+    error: { color: darkMode ? '#fca5a5' : '#b91c1c', textAlign: 'center', fontSize: 15 },
+    emptyTitle: { color: colors.text, fontSize: 18, fontWeight: '700' },
+    retryButton: { backgroundColor: colors.selected, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11, marginTop: 4 },
+    retryText: { color: '#fff', fontWeight: '700' },
+  });
+}
 
