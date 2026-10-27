@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native';
 import { UpdatedAgo } from '../components/UpdatedAgo';
+import { FavoriteButton } from '../components/FavoriteButton';
+import { useFavorites } from '../hooks/useFavorites';
 import { MATCHES_URL } from '../config';
 import sampleData from '../../data/matches.json';
 
@@ -65,6 +67,7 @@ export function MatchesScreen() {
   const [filter, setFilter] = useState<Filter>('all');
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [usingSampleData, setUsingSampleData] = useState(false);
+  const { isFavorite, toggle } = useFavorites();
 
   const loadMatches = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -114,6 +117,7 @@ export function MatchesScreen() {
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <Text style={[styles.status, item.status === 'live' && styles.liveStatus]}>{statusLabel(item)}</Text>
+        <FavoriteButton active={isFavorite(item.id)} onPress={() => toggle(item.id)} />
       </View>
       <View style={styles.teamsRow}>
         <Text style={styles.team} numberOfLines={2}>{item.home.name}</Text>
